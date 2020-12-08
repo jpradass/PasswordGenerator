@@ -2,10 +2,13 @@ package iohandler
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/jpradass/PasswordGenerator/wordlist"
 )
 
 var (
@@ -22,12 +25,6 @@ type WordlistIO struct {
 func New(l *log.Logger) *WordlistIO {
 	l.Println("Instantiating a new wordlist IO handler")
 	return &WordlistIO{logger: l}
-}
-
-// NewWordlistIO returns a new wordlistHTTP handler with the given logger
-func NewWordlistIO(logger *log.Logger) *WordlistIO {
-	logger.Println("Instantiating WordlistIO")
-	return &WordlistIO{logger}
 }
 
 // DownloadWordlist function to download wordlist locally
@@ -49,10 +46,45 @@ func (wio *WordlistIO) DownloadWordlist() ([]byte, error) {
 	return body, nil
 }
 
-// GetWordlist returns []byte to the file
-func (wio *WordlistIO) GetWordlist() ([]byte, error) {
+// GetWordlist returns the wordlist in JSON format
+func (wio *WordlistIO) GetWordlist() (*[]wordlist.FileJSON, error) {
 	wio.logger.Println("Reading wordlist locally")
-	return ioutil.ReadFile(wordlistPATH)
+	wl := []wordlist.FileJSON{}
+
+	file, err := os.Open(wordlistPATH)
+	if err != nil {
+		wio.logger.Printf("There was an error opening the wordlist file: %s\n", err.Error())
+		return nil, err
+	}
+
+	decd := json.NewDecoder(file)
+	err = decd.Decode(&wl)
+	if err != nil {
+		wio.logger.Printf("There was an error decoding the file: %s\n", err.Error())
+		return nil, err
+	}
+
+	return &wl, nil
+}
+
+// SaveWordlist handles the wordlist file locally
+func (wio *WordlistIO) SaveWordlist(wl *[]wordlist.FileJSON) error {
+	wio.logger.Println("Saving the wordlist locally")
+
+	file, err := os.OpenFile(wordlistPATH, os.O_CREATE|os.O_WRONLY, 0777)
+	if err != nil {
+		wio.logger.Printf("There was an error opening the wordlist file: %s\n", err.Error())
+		return err
+	}
+
+	enc := json.NewEncoder(file)
+	err = enc.Encode(&wl)
+	if err != nil {
+		wio.logger.Printf("There was an error encoding the file: %s\n", err.Error())
+		return err
+	}
+
+	return nil
 }
 
 // CheckWordlistFile checks if wordlist file exists

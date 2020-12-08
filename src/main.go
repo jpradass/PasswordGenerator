@@ -8,8 +8,10 @@ import (
 )
 
 func main() {
-	logger := log.New(os.Stdout, "pass-gen", 0)
+	logger := log.New(os.Stdout, "[pass-gen]: ", log.LstdFlags)
 	ctrller := controller.New(logger)
+	ctrller.GetWordlist()
+	ctrller.SaveWordlist()
 
 	// client := &http.Client{
 	// 	Transport: &http.Transport{

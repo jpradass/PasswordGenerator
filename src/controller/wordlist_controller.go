@@ -2,6 +2,10 @@ package controller
 
 import (
 	"log"
+	"strconv"
+	"strings"
+
+	"github.com/jpradass/PasswordGenerator/wordlist"
 
 	"github.com/jpradass/PasswordGenerator/iohandler"
 )
@@ -9,27 +13,69 @@ import (
 // WordlistCtrl is a struct to maintain control on
 // wordlists
 type WordlistCtrl struct {
-	logger *log.Logger
+	logger   *log.Logger
+	io       *iohandler.WordlistIO
+	wordlist *[]wordlist.FileJSON
 }
 
-// NewWordlist creates a new instance of Wordlist controller
-func NewWordlist(l *log.Logger) *WordlistCtrl {
+// New creates a new instance of Wordlist controller
+func New(l *log.Logger) *WordlistCtrl {
 	l.Println("Instantiating a new Wordlist controller")
-	return &WordlistCtrl{logger: l}
+	return &WordlistCtrl{
+		logger: l,
+		io:     iohandler.New(l),
+	}
 }
 
-// GetWordlist is a function to get wordlist
-func (wctrl *WordlistCtrl) GetWordlist() ([]byte, error) {
+// GetWordlist is a function that gets the wordlist
+func (wctrl *WordlistCtrl) GetWordlist() error {
 	wctrl.logger.Println("Getting wordlist")
-	wio := iohandler.NewWordlistIO(wctrl.logger)
+	var err error
 
-	if !wio.CheckWordlistFile() {
-		return wio.DownloadWordlist()
+	if !wctrl.io.CheckWordlistFile() {
+		file, err := wctrl.io.DownloadWordlist()
+		if err != nil {
+			return err
+		}
+
+		wctrl.wordlist, err = parseWordlist(file)
+		if err != nil {
+			return err
+		}
+
+	} else {
+		wctrl.wordlist, err = wctrl.io.GetWordlist()
+		if err != nil {
+			return err
+		}
 	}
 
-	return wio.GetWordlist()
+	return nil
 }
 
-// func persistWordlistFile(file []byte) error {
+// SaveWordlist is a function that persists the wordlist
+func (wctrl *WordlistCtrl) SaveWordlist() error {
+	wctrl.logger.Println("Saving wordlist")
 
-// }
+	err := wctrl.io.SaveWordlist(wctrl.wordlist)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func parseWordlist(wl []byte) (*[]wordlist.FileJSON, error) {
+	wlstruct := []wordlist.FileJSON{}
+	lines := strings.Split(string(wl), "\n")
+
+	for _, value := range lines[2:7778] {
+		result := strings.Split(value, "\t")
+		key, _ := strconv.Atoi(result[0])
+		wlstruct = append(wlstruct, wordlist.FileJSON{
+			Key:   key,
+			Value: result[1],
+		})
+	}
+	return &wlstruct, nil
+}
