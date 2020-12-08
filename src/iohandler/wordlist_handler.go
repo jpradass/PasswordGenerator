@@ -1,7 +1,6 @@
 package iohandler
 
 import (
-	"crypto/tls"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -12,8 +11,8 @@ import (
 )
 
 var (
-	wordlistURL  string = "https://theworld.com/~reinhold/diceware.wordlist.asc"
-	wordlistPATH string = "wordlist/diceware.wordlist.json"
+	wordlistURL  string = "https://www.mit.edu/~ecprice/wordlist.10000"
+	wordlistPATH string = "wordlist/mit.wordlist.json"
 )
 
 // WordlistIO struct to control connection to handle wordlist resource
@@ -31,8 +30,7 @@ func New(l *log.Logger) *WordlistIO {
 func (wio *WordlistIO) DownloadWordlist() ([]byte, error) {
 	wio.logger.Println("Downloading wordlist remotely")
 
-	client := getClient()
-	res, err := client.Get(wordlistURL)
+	res, err := http.Get(wordlistURL)
 	if err != nil {
 		return nil, err
 	}
@@ -95,12 +93,12 @@ func (wio *WordlistIO) CheckWordlistFile() bool {
 	return true
 }
 
-func getClient() *http.Client {
-	return &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-}
+// func getClient() *http.Client {
+// 	return &http.Client{
+// 		Transport: &http.Transport{
+// 			TLSClientConfig: &tls.Config{
+// 				InsecureSkipVerify: true,
+// 			},
+// 		},
+// 	}
+// }

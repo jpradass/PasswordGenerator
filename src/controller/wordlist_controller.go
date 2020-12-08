@@ -2,7 +2,6 @@ package controller
 
 import (
 	"log"
-	"strconv"
 	"strings"
 
 	"github.com/jpradass/PasswordGenerator/wordlist"
@@ -20,7 +19,7 @@ type WordlistCtrl struct {
 
 // New creates a new instance of Wordlist controller
 func New(l *log.Logger) *WordlistCtrl {
-	l.Println("Instantiating a new Wordlist controller")
+	l.Println("Instantiating a new wordlist controller")
 	return &WordlistCtrl{
 		logger: l,
 		io:     iohandler.New(l),
@@ -35,17 +34,25 @@ func (wctrl *WordlistCtrl) GetWordlist() error {
 	if !wctrl.io.CheckWordlistFile() {
 		file, err := wctrl.io.DownloadWordlist()
 		if err != nil {
+			wctrl.logger.Printf("There was an error downloading the wordlist: %s\n", err.Error())
 			return err
 		}
 
 		wctrl.wordlist, err = parseWordlist(file)
 		if err != nil {
+			wctrl.logger.Printf("There was an error parsing the wordlist: %s\n", err.Error())
+			return err
+		}
+
+		if err = wctrl.SaveWordlist(); err != nil {
+			wctrl.logger.Printf("There was an error saving the wordlist: %s\n", err.Error())
 			return err
 		}
 
 	} else {
 		wctrl.wordlist, err = wctrl.io.GetWordlist()
 		if err != nil {
+			wctrl.logger.Printf("There was an error getting the wordlist: %s\n", err.Error())
 			return err
 		}
 	}
@@ -59,6 +66,7 @@ func (wctrl *WordlistCtrl) SaveWordlist() error {
 
 	err := wctrl.io.SaveWordlist(wctrl.wordlist)
 	if err != nil {
+		wctrl.logger.Printf("There was an error saving the wordlist: %s\n", err.Error())
 		return err
 	}
 
@@ -69,12 +77,10 @@ func parseWordlist(wl []byte) (*[]wordlist.FileJSON, error) {
 	wlstruct := []wordlist.FileJSON{}
 	lines := strings.Split(string(wl), "\n")
 
-	for _, value := range lines[2:7778] {
-		result := strings.Split(value, "\t")
-		key, _ := strconv.Atoi(result[0])
+	for key, value := range lines {
 		wlstruct = append(wlstruct, wordlist.FileJSON{
-			Key:   key,
-			Value: result[1],
+			Key:   10000 + key,
+			Value: value,
 		})
 	}
 	return &wlstruct, nil

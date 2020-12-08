@@ -11,7 +11,7 @@ func main() {
 	logger := log.New(os.Stdout, "[pass-gen]: ", log.LstdFlags)
 	ctrller := controller.New(logger)
 	ctrller.GetWordlist()
-	ctrller.SaveWordlist()
+	// ctrller.SaveWordlist()
 
 	// client := &http.Client{
 	// 	Transport: &http.Transport{
